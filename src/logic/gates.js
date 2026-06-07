@@ -3,7 +3,7 @@ export const GATE_TYPES = {
   SWITCH:   { label: 'Switch',    inputs: 1, fn: null },
   BUTTON:   { label: 'Button',    inputs: 1, fn: null },  // passes input while held
   CLOCK:    { label: 'Clock',     inputs: 0, fn: null },
-  OUTPUT:   { label: 'LED',       inputs: 2, fn: ([a,c]) => a && !c },
+  OUTPUT:   { label: 'LED',       inputs: 1, fn: ([a]) => !!a },
   GROUND:   { label: 'Ground',    inputs: 0, fn: null },
   NOT:      { label: 'NOT',       inputs: 1, fn: ([a]) => !a },
   AND:      { label: 'AND',       inputs: 2, fn: ([a,b]) => a && b },

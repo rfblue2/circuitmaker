@@ -67,7 +67,7 @@ export const SHAPES = {
   SWITCH:  { W:60,  H:50,  inputPins:[{x:0,y:25}],   outputPins:[{x:60,y:25}] },
   BUTTON:  { W:60,  H:50,  inputPins:[{x:0,y:25}],   outputPins:[{x:60,y:25}] },
   CLOCK:   { W:62,  H:50,  inputPins:[],              outputPins:[{x:62,y:25}] },
-  OUTPUT:  { W:65,  H:50,  inputPins:[{x:0,y:15},{x:0,y:35}], outputPins:[] },
+  OUTPUT:  { W:65,  H:50,  inputPins:[{x:0,y:25}], outputPins:[] },
   GROUND:  { W:50,  H:36,  inputPins:[],              outputPins:[{x:25,y:0}] },
   MUX:     { W:55,  H:60,  inputPins:[{x:0,y:15},{x:0,y:30},{x:0,y:45}], outputPins:[{x:60,y:30}] },
   SEVENSEG:{ W:65,  H:90,  inputPins:[{x:0,y:16},{x:0,y:32},{x:0,y:48},{x:0,y:64}], outputPins:[] },

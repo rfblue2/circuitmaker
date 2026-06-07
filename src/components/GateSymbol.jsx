@@ -108,8 +108,7 @@ export function GateBody({ type, active, selected, signalValues = [] }) {
     const tf = on ? '#14532d' : '#1e293b';
     const ac = on ? '#4ade80' : '#334155';
     return <>
-      <line x1={0} y1={15} x2={8}  y2={15} stroke={stroke} strokeWidth={sw}/>
-      <line x1={0} y1={35} x2={8}  y2={35} stroke={stroke} strokeWidth={sw}/>
+      <line x1={0} y1={25} x2={8} y2={25} stroke={stroke} strokeWidth={sw}/>
       <path d="M 8,10 L 8,40 L 44,25 Z" fill={tf} stroke={ts} strokeWidth={sw}/>
       <line x1={44} y1={8} x2={44} y2={42} stroke={ts} strokeWidth={2.5}/>
       <line x1={50} y1={20} x2={60} y2={10} stroke={ac} strokeWidth={1.5}/>
@@ -267,10 +266,12 @@ export function GateBody({ type, active, selected, signalValues = [] }) {
 }
 
 // ─── GateSymbol ──────────────────────────────────────────────────────────────
-export default function GateSymbol({ gate, signalValues = [], onOutputClick, onInputClick, onGateMouseDown, selected }) {
+export default function GateSymbol({
+  gate, signalValues = [], onOutputClick, onInputClick, onGateMouseDown,
+  selected, highlightOutputPin, highlightInputPin,
+}) {
   const shape    = SHAPES[gate.type];
   const outVal0  = signalValues[0];
-  // For SEVENSEG the "active" value is the digit number; for others it's boolean
   const active   = gate.type === 'SEVENSEG' ? outVal0 : (outVal0 === true);
 
   return (
@@ -281,22 +282,30 @@ export default function GateSymbol({ gate, signalValues = [], onOutputClick, onI
     >
       <GateBody type={gate.type} active={active} selected={selected} signalValues={signalValues}/>
 
-      {shape.inputPins.map((pin, i) => (
-        <circle key={i} cx={pin.x} cy={pin.y} r={PIN_R}
-          fill="#0f172a" stroke="#475569" strokeWidth={1.5}
-          style={{ cursor: 'crosshair' }}
-          onMouseDown={(e) => { e.stopPropagation(); onInputClick?.(gate.id, i); }}
-        />
-      ))}
+      {shape.inputPins.map((pin, i) => {
+        const hl = highlightInputPin === i;
+        return (
+          <circle key={i} cx={pin.x} cy={pin.y} r={hl ? PIN_R + 2 : PIN_R}
+            fill={hl ? '#78350f' : '#0f172a'}
+            stroke={hl ? '#f59e0b' : '#475569'} strokeWidth={hl ? 2 : 1.5}
+            style={{ cursor: 'crosshair' }}
+            onMouseDown={(e) => { e.stopPropagation(); onInputClick?.(gate.id, i); }}
+          />
+        );
+      })}
 
-      {shape.outputPins.map((pin, i) => (
-        <circle key={i} cx={pin.x} cy={pin.y} r={PIN_R}
-          fill={signalValues[i] === true ? '#4ade80' : '#0f172a'}
-          stroke="#475569" strokeWidth={1.5}
-          style={{ cursor: 'crosshair' }}
-          onMouseDown={(e) => { e.stopPropagation(); onOutputClick?.(gate.id, i); }}
-        />
-      ))}
+      {shape.outputPins.map((pin, i) => {
+        const hl = highlightOutputPin === i;
+        const lit = signalValues[i] === true;
+        return (
+          <circle key={i} cx={pin.x} cy={pin.y} r={hl ? PIN_R + 2 : PIN_R}
+            fill={hl ? '#78350f' : (lit ? '#4ade80' : '#0f172a')}
+            stroke={hl ? '#f59e0b' : '#475569'} strokeWidth={hl ? 2 : 1.5}
+            style={{ cursor: 'crosshair' }}
+            onMouseDown={(e) => { e.stopPropagation(); onOutputClick?.(gate.id, i); }}
+          />
+        );
+      })}
     </g>
   );
 }

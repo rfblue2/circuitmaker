@@ -9,12 +9,13 @@ const MAX_SCALE = 5;
 export default function Canvas({ gates, wires, signalValues, pendingWire, actions }) {
   const svgRef = useRef(null);
 
-  const [vp, setVp] = useState({ x: 0, y: 0, scale: 1 });
-  const [dragging, setDragging]           = useState(null);
-  const [panning, setPanning]             = useState(null);
-  const [mouseWorld, setMouseWorld]       = useState({ x: 0, y: 0 });
-  const [selected, setSelected]           = useState(null);
-  const [pressedButton, setPressedButton] = useState(null);
+  const [vp, setVp]                         = useState({ x: 0, y: 0, scale: 1 });
+  const [dragging, setDragging]             = useState(null);
+  const [panning, setPanning]               = useState(null);
+  const [mouseWorld, setMouseWorld]         = useState({ x: 0, y: 0 });
+  const [selected, setSelected]             = useState(null);
+  const [pressedButton, setPressedButton]   = useState(null);
+  const [hoveredWire, setHoveredWire]       = useState(null); // wire id
 
   // Release button on mouseup anywhere
   useEffect(() => {
@@ -130,6 +131,8 @@ export default function Canvas({ gates, wires, signalValues, pendingWire, action
       e.preventDefault(); actions.copyGate(selected);
     } else if (meta && e.key === 'v') {
       e.preventDefault(); actions.pasteGate();
+    } else if (meta && e.key === 'z') {
+      e.preventDefault(); actions.undo();
     } else if (e.key === 'Escape') {
       actions.cancelWire(); setSelected(null);
     }
@@ -144,7 +147,6 @@ export default function Canvas({ gates, wires, signalValues, pendingWire, action
     actions.addGate(gateType, w.x - 30, w.y - 25);
   };
 
-  // Absolute world position of a gate's output pin
   const gateOutput = (gateId, fromPin = 0) => {
     const gate = gates.find(g => g.id === gateId);
     if (!gate) return null;
@@ -160,6 +162,15 @@ export default function Canvas({ gates, wires, signalValues, pendingWire, action
     const { inputs } = getPinPositions(gate);
     return { x: gate.x + inputs[toPin].x, y: gate.y + inputs[toPin].y };
   };
+
+  // Derive which pins to highlight from the hovered wire
+  const hoveredWireObj = hoveredWire ? wires.find(w => w.id === hoveredWire) : null;
+  const highlightedPins = hoveredWireObj
+    ? {
+        output: { gateId: hoveredWireObj.fromGate, pin: hoveredWireObj.fromPin ?? 0 },
+        input:  { gateId: hoveredWireObj.toGate,   pin: hoveredWireObj.toPin },
+      }
+    : null;
 
   // Grid dots
   const gridPx   = GRID * vp.scale;
@@ -194,12 +205,15 @@ export default function Canvas({ gates, wires, signalValues, pendingWire, action
           const from = gateOutput(wire.fromGate, fromPin);
           const to   = gateInput(wire.toGate, wire.toPin);
           if (!from || !to) return null;
-          const active = signalValues.get(wire.fromGate)?.[fromPin] === true;
+          const active  = signalValues.get(wire.fromGate)?.[fromPin] === true;
+          const hovered = wire.id === hoveredWire;
           return (
             <WireLine key={wire.id}
               x1={from.x} y1={from.y} x2={to.x} y2={to.y}
-              active={active}
+              active={active} hovered={hovered}
               onClick={() => actions.deleteWire(wire.id)}
+              onMouseEnter={() => setHoveredWire(wire.id)}
+              onMouseLeave={() => setHoveredWire(null)}
             />
           );
         })}
@@ -212,18 +226,27 @@ export default function Canvas({ gates, wires, signalValues, pendingWire, action
         })()}
 
         {/* Gates */}
-        {gates.map(gate => (
-          <g key={gate.id} onClick={(e) => handleGateClick(e, gate)}>
-            <GateSymbol
-              gate={gate}
-              signalValues={signalValues.get(gate.id) ?? []}
-              onOutputClick={handleOutputClick}
-              onInputClick={handleInputClick}
-              onGateMouseDown={handleGateMouseDown}
-              selected={selected === gate.id}
-            />
-          </g>
-        ))}
+        {gates.map(gate => {
+          // Check if any pin on this gate is highlighted by the hovered wire
+          const outHighlight = highlightedPins?.output.gateId === gate.id
+            ? highlightedPins.output.pin : null;
+          const inHighlight  = highlightedPins?.input.gateId  === gate.id
+            ? highlightedPins.input.pin  : null;
+          return (
+            <g key={gate.id} onClick={(e) => handleGateClick(e, gate)}>
+              <GateSymbol
+                gate={gate}
+                signalValues={signalValues.get(gate.id) ?? []}
+                onOutputClick={handleOutputClick}
+                onInputClick={handleInputClick}
+                onGateMouseDown={handleGateMouseDown}
+                selected={selected === gate.id}
+                highlightOutputPin={outHighlight}
+                highlightInputPin={inHighlight}
+              />
+            </g>
+          );
+        })}
       </g>
     </svg>
   );

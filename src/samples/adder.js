@@ -1,53 +1,60 @@
-// 2-bit ripple-carry adder.
-// A1:A0 + B1:B0 → Sum1:Sum0 + Carry
-// Toggle any switch to change an input bit.
+// 1-bit full adder built from basic gates.
+// Sum  = A XOR B XOR Cin
+// Cout = (A AND B) OR (Cin AND (A XOR B))
 export default {
-  name: '2-bit Adder',
+  name: '1-Bit Full Adder',
   schematic: {
     gates: [
-      // Bit 0 inputs
-      { id: 'vA0', type: 'INPUT',     x: 40,  y: 60  },
-      { id: 'sA0', type: 'SWITCH',    x: 180, y: 60  },
-      { id: 'vB0', type: 'INPUT',     x: 40,  y: 160 },
-      { id: 'sB0', type: 'SWITCH',    x: 180, y: 160 },
-      // Half adder for bit 0
-      { id: 'ha',  type: 'HALFADDER', x: 360, y: 80  },
-      // Bit 1 inputs
-      { id: 'vA1', type: 'INPUT',     x: 40,  y: 300 },
-      { id: 'sA1', type: 'SWITCH',    x: 180, y: 300 },
-      { id: 'vB1', type: 'INPUT',     x: 40,  y: 400 },
-      { id: 'sB1', type: 'SWITCH',    x: 180, y: 400 },
-      // Full adder for bit 1 (carry in from half adder)
-      { id: 'fa',  type: 'FULLADDER', x: 360, y: 320 },
-      // Output LEDs: Sum0, Sum1, Carry
-      { id: 'led0', type: 'OUTPUT', x: 580, y: 60  },
-      { id: 'gnd0', type: 'GROUND', x: 500, y: 160 },
-      { id: 'led1', type: 'OUTPUT', x: 580, y: 300 },
-      { id: 'gnd1', type: 'GROUND', x: 500, y: 400 },
-      { id: 'ledC', type: 'OUTPUT', x: 580, y: 400 },
-      { id: 'gndC', type: 'GROUND', x: 500, y: 500 },
+      // Inputs
+      { id: 'vA',   type: 'INPUT',  x: 40,  y: 80  },
+      { id: 'swA',  type: 'SWITCH', x: 160, y: 80  },
+      { id: 'vB',   type: 'INPUT',  x: 40,  y: 200 },
+      { id: 'swB',  type: 'SWITCH', x: 160, y: 200 },
+      { id: 'vCin', type: 'INPUT',  x: 40,  y: 320 },
+      { id: 'swCin',type: 'SWITCH', x: 160, y: 320 },
+
+      // Stage 1: A XOR B,  A AND B
+      { id: 'xor1', type: 'XOR',    x: 320, y: 80  },
+      { id: 'and1', type: 'AND',    x: 320, y: 220 },
+
+      // Stage 2: (A XOR B) XOR Cin = Sum,   (A XOR B) AND Cin
+      { id: 'xor2', type: 'XOR',    x: 520, y: 180 },
+      { id: 'and2', type: 'AND',    x: 520, y: 300 },
+
+      // Carry: (A AND B) OR ((A XOR B) AND Cin)
+      { id: 'or1',  type: 'OR',     x: 700, y: 260 },
+
+      // Outputs
+      { id: 'ledS', type: 'OUTPUT', x: 700, y: 180 },
+      { id: 'ledC', type: 'OUTPUT', x: 880, y: 260 },
     ],
     wires: [
-      // Voltages → switches
-      { id: 'w1', fromGate: 'vA0', fromPin: 0, toGate: 'sA0', toPin: 0 },
-      { id: 'w2', fromGate: 'vB0', fromPin: 0, toGate: 'sB0', toPin: 0 },
-      { id: 'w3', fromGate: 'vA1', fromPin: 0, toGate: 'sA1', toPin: 0 },
-      { id: 'w4', fromGate: 'vB1', fromPin: 0, toGate: 'sB1', toPin: 0 },
-      // Switches → half adder
-      { id: 'w5', fromGate: 'sA0', fromPin: 0, toGate: 'ha', toPin: 0 },
-      { id: 'w6', fromGate: 'sB0', fromPin: 0, toGate: 'ha', toPin: 1 },
-      // Switches → full adder
-      { id: 'w7', fromGate: 'sA1', fromPin: 0, toGate: 'fa', toPin: 0 },
-      { id: 'w8', fromGate: 'sB1', fromPin: 0, toGate: 'fa', toPin: 1 },
-      // Half adder carry → full adder carry-in
-      { id: 'w9', fromGate: 'ha', fromPin: 1, toGate: 'fa', toPin: 2 },
+      // Voltage → switches
+      { id: 'wvA',  fromGate: 'vA',   fromPin: 0, toGate: 'swA',  toPin: 0 },
+      { id: 'wvB',  fromGate: 'vB',   fromPin: 0, toGate: 'swB',  toPin: 0 },
+      { id: 'wvC',  fromGate: 'vCin', fromPin: 0, toGate: 'swCin',toPin: 0 },
+
+      // A and B into XOR1 and AND1
+      { id: 'wA0',  fromGate: 'swA',  fromPin: 0, toGate: 'xor1', toPin: 0 },
+      { id: 'wA1',  fromGate: 'swA',  fromPin: 0, toGate: 'and1', toPin: 0 },
+      { id: 'wB0',  fromGate: 'swB',  fromPin: 0, toGate: 'xor1', toPin: 1 },
+      { id: 'wB1',  fromGate: 'swB',  fromPin: 0, toGate: 'and1', toPin: 1 },
+
+      // XOR1 result (A⊕B) into XOR2 and AND2
+      { id: 'wX0',  fromGate: 'xor1', fromPin: 0, toGate: 'xor2', toPin: 0 },
+      { id: 'wX1',  fromGate: 'xor1', fromPin: 0, toGate: 'and2', toPin: 0 },
+
+      // Cin into XOR2 and AND2
+      { id: 'wCin0',fromGate: 'swCin',fromPin: 0, toGate: 'xor2', toPin: 1 },
+      { id: 'wCin1',fromGate: 'swCin',fromPin: 0, toGate: 'and2', toPin: 1 },
+
+      // Carry generation
+      { id: 'wG0',  fromGate: 'and1', fromPin: 0, toGate: 'or1',  toPin: 0 },
+      { id: 'wG1',  fromGate: 'and2', fromPin: 0, toGate: 'or1',  toPin: 1 },
+
       // Outputs
-      { id: 'w10', fromGate: 'ha',   fromPin: 0, toGate: 'led0', toPin: 0 },
-      { id: 'w11', fromGate: 'gnd0', fromPin: 0, toGate: 'led0', toPin: 1 },
-      { id: 'w12', fromGate: 'fa',   fromPin: 0, toGate: 'led1', toPin: 0 },
-      { id: 'w13', fromGate: 'gnd1', fromPin: 0, toGate: 'led1', toPin: 1 },
-      { id: 'w14', fromGate: 'fa',   fromPin: 1, toGate: 'ledC', toPin: 0 },
-      { id: 'w15', fromGate: 'gndC', fromPin: 0, toGate: 'ledC', toPin: 1 },
+      { id: 'wSum', fromGate: 'xor2', fromPin: 0, toGate: 'ledS', toPin: 0 },
+      { id: 'wCout',fromGate: 'or1',  fromPin: 0, toGate: 'ledC', toPin: 0 },
     ],
     inputValues: {},
   },

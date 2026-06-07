@@ -8,24 +8,40 @@ let nextId = 1;
 const uid = () => `g${nextId++}`;
 const wid = () => `w${nextId++}`;
 
-const initialState = {
+const HISTORY_LIMIT = 50;
+
+const initialCircuit = {
   gates: [],
   wires: [],
-  inputValues: new Map(),      // SWITCH/BUTTON/CLOCK toggle + HEXPAD digit
-  componentState: new Map(),   // FF state: Map<gateId, {q,prevClk}>
+  inputValues: new Map(),
+  componentState: new Map(),
   pendingWire: null,
   clipboard: null,
 };
+
+const initialState = { ...initialCircuit, past: [] };
+
+// Snapshot only the structural fields for undo
+function snapshot(state) {
+  return { gates: state.gates, wires: state.wires, inputValues: new Map(state.inputValues) };
+}
+
+// Push a snapshot onto the history stack before a structural change
+function pushHistory(state) {
+  const past = [...state.past, snapshot(state)];
+  return past.length > HISTORY_LIMIT ? past.slice(past.length - HISTORY_LIMIT) : past;
+}
 
 function reducer(state, action) {
   switch (action.type) {
     case 'ADD_GATE': {
       const gate = { id: uid(), type: action.gateType, x: snap(action.x), y: snap(action.y) };
-      return { ...state, gates: [...state.gates, gate] };
+      return { ...state, past: pushHistory(state), gates: [...state.gates, gate] };
     }
     case 'MOVE_GATE':
       return {
         ...state,
+        past: pushHistory(state),
         gates: state.gates.map(g =>
           g.id === action.id ? { ...g, x: snap(action.x), y: snap(action.y) } : g
         ),
@@ -33,6 +49,7 @@ function reducer(state, action) {
     case 'DELETE_GATE':
       return {
         ...state,
+        past: pushHistory(state),
         gates: state.gates.filter(g => g.id !== action.id),
         wires: state.wires.filter(w => w.fromGate !== action.id && w.toGate !== action.id),
         inputValues: new Map([...state.inputValues].filter(([k]) => k !== action.id)),
@@ -49,10 +66,10 @@ function reducer(state, action) {
         w => !(w.toGate === action.toGate && w.toPin === action.toPin)
       );
       const wire = { id: wid(), fromGate, fromPin: fromPin ?? 0, toGate: action.toGate, toPin: action.toPin };
-      return { ...state, wires: [...filtered, wire], pendingWire: null };
+      return { ...state, past: pushHistory(state), wires: [...filtered, wire], pendingWire: null };
     }
     case 'DELETE_WIRE':
-      return { ...state, wires: state.wires.filter(w => w.id !== action.id) };
+      return { ...state, past: pushHistory(state), wires: state.wires.filter(w => w.id !== action.id) };
     case 'TOGGLE_INPUT': {
       const next = new Map(state.inputValues);
       next.set(action.id, !next.get(action.id));
@@ -81,20 +98,34 @@ function reducer(state, action) {
       if (!state.clipboard) return state;
       const { gateType, x, y } = state.clipboard;
       const gate = { id: uid(), type: gateType, x: snap(x + GRID * 2), y: snap(y + GRID * 2) };
-      return { ...state, gates: [...state.gates, gate], clipboard: { gateType, x: gate.x, y: gate.y } };
+      return { ...state, past: pushHistory(state), gates: [...state.gates, gate], clipboard: { gateType, x: gate.x, y: gate.y } };
     }
     case 'LOAD': {
       nextId = 1;
       const iv = action.data.inputValues;
       return {
-        ...initialState,
+        ...initialCircuit,
+        past: pushHistory(state),
         gates: action.data.gates ?? [],
         wires: action.data.wires ?? [],
         inputValues: iv instanceof Map ? iv : new Map(Object.entries(iv ?? {})),
       };
     }
     case 'CLEAR':
-      return { ...initialState };
+      return { ...initialCircuit, past: pushHistory(state), clipboard: state.clipboard };
+    case 'UNDO': {
+      if (!state.past.length) return state;
+      const prev = state.past[state.past.length - 1];
+      return {
+        ...state,
+        past: state.past.slice(0, -1),
+        gates: prev.gates,
+        wires: prev.wires,
+        inputValues: prev.inputValues,
+        componentState: new Map(),
+        pendingWire: null,
+      };
+    }
     default:
       return state;
   }
@@ -116,7 +147,6 @@ export function useCircuit() {
     state.gates, state.wires, state.inputValues, state.componentState
   );
 
-  // Sync FF state after each render if it changed
   useEffect(() => {
     if (!componentStatesEqual(nextComponentState, state.componentState)) {
       dispatch({ type: 'UPDATE_COMPONENT_STATE', nextState: nextComponentState });
@@ -138,7 +168,8 @@ export function useCircuit() {
     pasteGate:  useCallback(() => dispatch({ type: 'PASTE_GATE' }), []),
     load:       useCallback((data) => dispatch({ type: 'LOAD', data }), []),
     clear:      useCallback(() => dispatch({ type: 'CLEAR' }), []),
+    undo:       useCallback(() => dispatch({ type: 'UNDO' }), []),
   };
 
-  return { ...state, signalValues, ...actions };
+  return { ...state, signalValues, canUndo: state.past.length > 0, ...actions };
 }
