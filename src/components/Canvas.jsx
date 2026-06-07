@@ -6,7 +6,9 @@ import { GRID } from '../store/useCircuit.js';
 const MIN_SCALE = 0.2;
 const MAX_SCALE = 5;
 
-export default function Canvas({ gates, wires, signalValues, pendingWire, actions }) {
+const CLOCK_HZ_OPTIONS = [0.25, 0.5, 1, 2, 4, 8, 16, 32];
+
+export default function Canvas({ gates, wires, signalValues, pendingWire, actions, clockFreqs = {}, onSetClockFreq }) {
   const svgRef = useRef(null);
 
   const [vp, setVp]                         = useState({ x: 0, y: 0, scale: 1 });
@@ -16,6 +18,7 @@ export default function Canvas({ gates, wires, signalValues, pendingWire, action
   const [selected, setSelected]             = useState(null);
   const [pressedButton, setPressedButton]   = useState(null);
   const [hoveredWire, setHoveredWire]       = useState(null); // wire id
+  const [clockMenu, setClockMenu]           = useState(null); // { gateId, x, y }
 
   // Release button on mouseup anywhere
   useEffect(() => {
@@ -27,6 +30,14 @@ export default function Canvas({ gates, wires, signalValues, pendingWire, action
     window.addEventListener('mouseup', release);
     return () => window.removeEventListener('mouseup', release);
   }, [pressedButton, actions]);
+
+  // Close clock menu on any outside click
+  useEffect(() => {
+    if (!clockMenu) return;
+    const close = () => setClockMenu(null);
+    window.addEventListener('mousedown', close);
+    return () => window.removeEventListener('mousedown', close);
+  }, [clockMenu]);
 
   const toWorld = useCallback((sx, sy) => ({
     x: (sx - vp.x) / vp.scale,
@@ -138,6 +149,12 @@ export default function Canvas({ gates, wires, signalValues, pendingWire, action
     }
   };
 
+  const handleGateContextMenu = (e, gate) => {
+    if (gate.type !== 'CLOCK') return;
+    e.preventDefault();
+    setClockMenu({ gateId: gate.id, x: e.clientX, y: e.clientY });
+  };
+
   const handleDrop = (e) => {
     e.preventDefault();
     const gateType = e.dataTransfer.getData('gateType');
@@ -177,7 +194,10 @@ export default function Canvas({ gates, wires, signalValues, pendingWire, action
   const gridOffX = ((vp.x % gridPx) + gridPx) % gridPx;
   const gridOffY = ((vp.y % gridPx) + gridPx) % gridPx;
 
+  const currentHz = clockMenu ? (clockFreqs[clockMenu.gateId] ?? 1) : 1;
+
   return (
+    <>
     <svg
       ref={svgRef}
       width="100%" height="100%"
@@ -233,7 +253,8 @@ export default function Canvas({ gates, wires, signalValues, pendingWire, action
           const inHighlight  = highlightedPins?.input.gateId  === gate.id
             ? highlightedPins.input.pin  : null;
           return (
-            <g key={gate.id} onClick={(e) => handleGateClick(e, gate)}>
+            <g key={gate.id} onClick={(e) => handleGateClick(e, gate)}
+               onContextMenu={(e) => handleGateContextMenu(e, gate)}>
               <GateSymbol
                 gate={gate}
                 signalValues={signalValues.get(gate.id) ?? []}
@@ -249,5 +270,38 @@ export default function Canvas({ gates, wires, signalValues, pendingWire, action
         })}
       </g>
     </svg>
+
+    {clockMenu && (
+      <div
+        onMouseDown={(e) => e.stopPropagation()}
+        style={{
+          position: 'fixed', top: clockMenu.y, left: clockMenu.x, zIndex: 1000,
+          background: '#1e293b', border: '1px solid #334155', borderRadius: 6,
+          padding: '4px 0', minWidth: 140, boxShadow: '0 4px 16px rgba(0,0,0,0.5)',
+          fontFamily: 'monospace', fontSize: 12,
+        }}
+      >
+        <div style={{ padding: '4px 12px 6px', color: '#94a3b8', fontSize: 10, borderBottom: '1px solid #334155' }}>
+          Clock Speed
+        </div>
+        {CLOCK_HZ_OPTIONS.map(hz => (
+          <div
+            key={hz}
+            onClick={() => { onSetClockFreq?.(clockMenu.gateId, hz); setClockMenu(null); }}
+            style={{
+              padding: '5px 12px', cursor: 'pointer', color: hz === currentHz ? '#4ade80' : '#cbd5e1',
+              background: hz === currentHz ? '#0f2a1a' : 'transparent',
+              display: 'flex', justifyContent: 'space-between', gap: 16,
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.background = hz === currentHz ? '#0f2a1a' : '#243044'}
+            onMouseLeave={(e) => e.currentTarget.style.background = hz === currentHz ? '#0f2a1a' : 'transparent'}
+          >
+            <span>{hz < 1 ? `1/${Math.round(1/hz)}` : hz} Hz</span>
+            {hz === currentHz && <span>✓</span>}
+          </div>
+        ))}
+      </div>
+    )}
+    </>
   );
 }

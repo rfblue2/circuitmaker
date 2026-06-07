@@ -8,8 +8,7 @@ export default {
       // Inputs
       { id: 'v1',   type: 'INPUT',  x: 40,  y: 80  },
       { id: 'sw1',  type: 'SWITCH', x: 180, y: 80  },  // D
-      { id: 'v2',   type: 'INPUT',  x: 40,  y: 200 },
-      { id: 'sw2',  type: 'SWITCH', x: 180, y: 200 },  // Enable (CLK)
+      { id: 'clk',  type: 'CLOCK',  x: 40,  y: 200 },  // Enable
 
       // NOT D  →  D̄
       { id: 'notD', type: 'NOT',    x: 340, y: 68  },
@@ -27,9 +26,8 @@ export default {
       { id: 'ledQb', type: 'OUTPUT', x: 760, y: 160 },
     ],
     wires: [
-      // Voltage → switches
+      // Voltage → D switch
       { id: 'w1', fromGate: 'v1',  fromPin: 0, toGate: 'sw1',  toPin: 0 },
-      { id: 'w2', fromGate: 'v2',  fromPin: 0, toGate: 'sw2',  toPin: 0 },
 
       // D → NOT and NAND1
       { id: 'w3', fromGate: 'sw1', fromPin: 0, toGate: 'notD', toPin: 0 },
@@ -38,9 +36,9 @@ export default {
       // D̄ → NAND2
       { id: 'w5', fromGate: 'notD', fromPin: 0, toGate: 'n2',  toPin: 0 },
 
-      // Enable → both front-end NANDs
-      { id: 'w6', fromGate: 'sw2', fromPin: 0, toGate: 'n1',  toPin: 1 },
-      { id: 'w7', fromGate: 'sw2', fromPin: 0, toGate: 'n2',  toPin: 1 },
+      // Clock → both front-end NANDs
+      { id: 'w6', fromGate: 'clk', fromPin: 0, toGate: 'n1',  toPin: 1 },
+      { id: 'w7', fromGate: 'clk', fromPin: 0, toGate: 'n2',  toPin: 1 },
 
       // S̄ → Q latch input
       { id: 'w8', fromGate: 'n1',  fromPin: 0, toGate: 'n3',  toPin: 0 },

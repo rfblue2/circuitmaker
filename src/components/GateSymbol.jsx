@@ -1,14 +1,9 @@
 import { SHAPES, BUBBLE_R } from './gateShapes.js';
+import { SEG_MAP } from '../logic/segMap.js';
+
+/* eslint-disable react-refresh/only-export-components */
 
 const PIN_R = 5;
-
-// BCD → segment map [a,b,c,d,e,f,g]
-const SEG_MAP = [
-  [1,1,1,1,1,1,0],[0,1,1,0,0,0,0],[1,1,0,1,1,0,1],[1,1,1,1,0,0,1],
-  [0,1,1,0,0,1,1],[1,0,1,1,0,1,1],[1,0,1,1,1,1,1],[1,1,1,0,0,0,0],
-  [1,1,1,1,1,1,1],[1,1,1,1,0,1,1],[1,1,1,0,1,1,1],[0,0,1,1,1,1,1],
-  [1,0,0,1,1,1,0],[0,1,1,1,1,0,1],[1,0,0,1,1,1,1],[1,0,0,0,1,1,1],
-];
 const SEG_LINES = {
   a:[16,10,50,10], b:[54,12,54,38], c:[54,42,54,68],
   d:[16,72,50,72], e:[10,42,10,68], f:[10,12,10,38], g:[16,40,50,40],
@@ -150,6 +145,49 @@ export function GateBody({ type, active, selected, signalValues = [] }) {
     </>;
   }
 
+  if (type === 'LEDMATRIX') {
+    const pixels = signalValues.slice(0, 15).map(v => !!v);
+    return <>
+      <rect x={0} y={0} width={70} height={110} rx={3} fill="#0a0000" stroke={stroke} strokeWidth={sw}/>
+      {/* Column leads: top-edge stubs for C0, C1, C2 */}
+      {[19, 37, 55].map((x, i) => (
+        <line key={`c${i}`} x1={x} y1={0} x2={x} y2={8} stroke="#475569" strokeWidth={1}/>
+      ))}
+      {/* Row leads: left-edge stubs for R0–R4 */}
+      {[16, 36, 56, 76, 96].map((y, i) => (
+        <line key={`r${i}`} x1={0} y1={y} x2={12} y2={y} stroke="#475569" strokeWidth={1}/>
+      ))}
+      {pixels.map((on, i) => {
+        const col = i % 3;
+        const row = Math.floor(i / 3);
+        return <rect key={i} x={12 + col*18} y={8 + row*20} width={14} height={16} rx={2}
+          fill={on ? '#ff4444' : '#2d1111'}/>;
+      })}
+    </>;
+  }
+
+  if (type === 'DEC7SEG') {
+    return <BoxGate W={55} H={100} fill={fill} stroke={stroke} sw={sw} title="DEC7SEG"
+      inputLabels={['B3','B2','B1','B0']} outputLabels={['a','b','c','d','e','f','g']}/>;
+  }
+
+  if (type === 'SEG7') {
+    const segs = signalValues.slice(0, 7).map(v => v ? 1 : 0);
+    return <>
+      <rect x={8} y={5} width={52} height={100} rx={3} fill="#0a0000" stroke="#334155" strokeWidth={1}/>
+      {SHAPES.SEG7.inputPins.map((pin,i) => (
+        <line key={i} x1={0} y1={pin.y} x2={8} y2={pin.y} stroke="#475569" strokeWidth={1.5}/>
+      ))}
+      {SEG_KEYS.map((seg,i) => {
+        const [x1,y1,x2,y2] = SEG_LINES[seg];
+        // offset segment coords to fit inside taller body
+        const dy = 10;
+        return <line key={seg} x1={x1} y1={y1+dy} x2={x2} y2={y2+dy}
+          stroke={segs[i] ? '#ff4444' : '#2d1111'} strokeWidth={4} strokeLinecap="round"/>;
+      })}
+    </>;
+  }
+
   if (type === 'HALFADDER') {
     return <BoxGate W={55} H={50} fill={fill} stroke={stroke} sw={sw} title="HALFADDER"
       inputLabels={['A','B']} outputLabels={['S','C']}/>;
@@ -169,6 +207,11 @@ export function GateBody({ type, active, selected, signalValues = [] }) {
         <line key={i} x1={55} y1={pin.y} x2={pin.x} y2={pin.y} stroke={stroke} strokeWidth={sw}/>
       ))}
     </>;
+  }
+
+  if (type === 'MATRIX3X5') {
+    return <BoxGate W={70} H={116} fill={fill} stroke={stroke} sw={sw} title="MATRIX3X5"
+      inputLabels={['B3','B2','B1','B0','C0','C1','C2']} outputLabels={['R0','R1','R2','R3','R4']}/>;
   }
 
   // ── Flip-flops ──────────────────────────────────────────

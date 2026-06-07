@@ -1,4 +1,4 @@
-import { useReducer, useCallback, useEffect } from 'react';
+import { useReducer, useCallback, useEffect, useRef } from 'react';
 import { simulate } from '../logic/simulate.js';
 
 export const GRID = 20;
@@ -87,6 +87,12 @@ function reducer(state, action) {
       for (const id of clockIds) next.set(id, !next.get(id));
       return { ...state, inputValues: next };
     }
+    case 'TICK_SPECIFIC_CLOCKS': {
+      if (!action.ids?.length) return state;
+      const next = new Map(state.inputValues);
+      for (const id of action.ids) next.set(id, !next.get(id));
+      return { ...state, inputValues: next };
+    }
     case 'UPDATE_COMPONENT_STATE':
       return { ...state, componentState: action.nextState };
     case 'COPY_GATE': {
@@ -142,10 +148,12 @@ function componentStatesEqual(a, b) {
 
 export function useCircuit() {
   const [state, dispatch] = useReducer(reducer, initialState);
+  const prevSignalRef = useRef(new Map());
 
   const { signalValues, nextComponentState } = simulate(
-    state.gates, state.wires, state.inputValues, state.componentState
+    state.gates, state.wires, state.inputValues, state.componentState, prevSignalRef.current // eslint-disable-line react-hooks/refs
   );
+  prevSignalRef.current = signalValues; // eslint-disable-line react-hooks/refs
 
   useEffect(() => {
     if (!componentStatesEqual(nextComponentState, state.componentState)) {
@@ -164,6 +172,7 @@ export function useCircuit() {
     toggleInput:useCallback((id) => dispatch({ type: 'TOGGLE_INPUT', id }), []),
     setInput:   useCallback((id, v) => dispatch({ type: 'SET_INPUT', id, value: v }), []),
     tickClocks: useCallback(() => dispatch({ type: 'TICK_CLOCKS' }), []),
+    tickSpecificClocks: useCallback((ids) => dispatch({ type: 'TICK_SPECIFIC_CLOCKS', ids }), []),
     copyGate:   useCallback((id) => dispatch({ type: 'COPY_GATE', id }), []),
     pasteGate:  useCallback(() => dispatch({ type: 'PASTE_GATE' }), []),
     load:       useCallback((data) => dispatch({ type: 'LOAD', data }), []),

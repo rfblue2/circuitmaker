@@ -6,9 +6,9 @@ import { exportSchematic, importSchematic } from '../io/schematic.js';
 import { SAMPLES } from '../samples/index.js';
 
 const GROUPS = [
-  { label: 'I/O',          types: ['INPUT','GROUND','SWITCH','BUTTON','CLOCK','OUTPUT','SEVENSEG','HEXPAD'] },
-  { label: 'Logic Gates',  types: ['NOT','AND','OR','NAND','NOR','XOR','XNOR','MUX'] },
-  { label: 'Combinational',types: ['HALFADDER','FULLADDER','DEC24'] },
+  { label: 'I/O',          types: ['INPUT','GROUND','SWITCH','BUTTON','CLOCK','OUTPUT','SEVENSEG','SEG7','HEXPAD','LEDMATRIX'] },
+  { label: 'Logic Gates',  types: ['NOT','AND','OR','NAND','NOR','XOR','XNOR'] },
+  { label: 'Combinational',types: ['MUX','HALFADDER','FULLADDER','DEC24','DEC7SEG'] },
   { label: 'Flip-Flops',   types: ['DFF','SRFF','JKFF'] },
 ];
 
@@ -92,7 +92,7 @@ export default function Toolbar({ gates, wires, inputValues, actions }) {
 
   return (
     <div style={{
-      width: 106, background: '#1e293b', borderRight: '1px solid #334155',
+      width: 180, background: '#1e293b', borderRight: '1px solid #334155',
       display: 'flex', flexDirection: 'column', gap: 4, padding: 8, userSelect: 'none',
       overflowY: 'auto',
     }}>
@@ -122,7 +122,7 @@ export default function Toolbar({ gates, wires, inputValues, actions }) {
             <span style={{ fontSize: 8 }}>{collapsed[group.label] ? '▶' : '▼'}</span>
           </button>
           {!collapsed[group.label] && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 3, marginTop: 2 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 3, marginTop: 2 }}>
               {group.types.map(type => (
                 <GateItem key={type} type={type} onDragStart={handleDragStart} />
               ))}

@@ -71,6 +71,16 @@ export const SHAPES = {
   GROUND:  { W:50,  H:36,  inputPins:[],              outputPins:[{x:25,y:0}] },
   MUX:     { W:55,  H:60,  inputPins:[{x:0,y:15},{x:0,y:30},{x:0,y:45}], outputPins:[{x:60,y:30}] },
   SEVENSEG:{ W:65,  H:90,  inputPins:[{x:0,y:16},{x:0,y:32},{x:0,y:48},{x:0,y:64}], outputPins:[] },
+  // Decoder: 4 BCD inputs → 7 segment outputs
+  DEC7SEG: { W:55,  H:100,
+    inputPins: [{x:0,y:18},{x:0,y:36},{x:0,y:54},{x:0,y:72}],
+    outputPins:[{x:60,y:8},{x:60,y:22},{x:60,y:36},{x:60,y:50},{x:60,y:64},{x:60,y:78},{x:60,y:92}],
+  },
+  // Raw 7-segment display: 7 independent segment inputs (a–g), no outputs
+  SEG7:    { W:65,  H:110,
+    inputPins: [{x:0,y:10},{x:0,y:24},{x:0,y:38},{x:0,y:52},{x:0,y:66},{x:0,y:80},{x:0,y:94}],
+    outputPins:[],
+  },
 
   // ── Multi-output combinational ────────────────────────
   HALFADDER:{ W:55, H:50,
@@ -85,6 +95,13 @@ export const SHAPES = {
     inputPins:[{x:0,y:25},{x:0,y:55}],     // A0(LSB), A1(MSB)
     outputPins:[{x:60,y:10},{x:60,y:27},{x:60,y:53},{x:60,y:70}], // Y0–Y3
   },
+  MATRIX3X5: { W:70, H:116,
+    inputPins: [
+      {x:0,y:16}, {x:0,y:32}, {x:0,y:48}, {x:0,y:64}, // B3-B0
+      {x:0,y:82}, {x:0,y:96}, {x:0,y:110},            // C0-C2
+    ],
+    outputPins:[{x:75,y:18},{x:75,y:38},{x:75,y:58},{x:75,y:78},{x:75,y:98}], // R0-R4
+  },
 
   // ── Flip-flops ────────────────────────────────────────
   DFF:  { W:55, H:60,
@@ -98,6 +115,15 @@ export const SHAPES = {
   JKFF: { W:55, H:70,
     inputPins:[{x:0,y:15},{x:0,y:35},{x:0,y:58}],  // J, K, Clk
     outputPins:[{x:60,y:22},{x:60,y:50}],           // Q, Q̄
+  },
+
+  // ── LED matrix (3 wide × 5 tall) — pins 0-2: cols C0-C2 (top), 3-7: rows R0-R4 (left)
+  LEDMATRIX:{ W:70, H:110,
+    inputPins: [
+      {x:19, y:0}, {x:37, y:0}, {x:55, y:0},               // C0, C1, C2 (top)
+      {x:0, y:16}, {x:0, y:36}, {x:0, y:56}, {x:0, y:76}, {x:0, y:96}, // R0–R4 (left)
+    ],
+    outputPins:[],
   },
 
   // ── Hex numpad ────────────────────────────────────────

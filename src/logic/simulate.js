@@ -1,8 +1,30 @@
 import { GATE_TYPES } from './gates.js';
+import { SEG_MAP } from './segMap.js';
+
+const MATRIX_3X5_FONT = [
+  ['111', '101', '101', '101', '111'], // 0
+  ['010', '110', '010', '010', '111'], // 1
+  ['111', '001', '111', '100', '111'], // 2
+  ['111', '001', '111', '001', '111'], // 3
+  ['101', '101', '111', '001', '001'], // 4
+  ['111', '100', '111', '001', '111'], // 5
+  ['111', '100', '111', '101', '111'], // 6
+  ['111', '001', '010', '010', '010'], // 7
+  ['111', '101', '111', '101', '111'], // 8
+  ['111', '101', '111', '001', '111'], // 9
+  ['111', '101', '111', '101', '101'], // A
+  ['110', '101', '110', '101', '110'], // B
+  ['111', '100', '100', '100', '111'], // C
+  ['110', '101', '101', '101', '110'], // D
+  ['111', '100', '111', '100', '111'], // E
+  ['111', '100', '111', '100', '100'], // F
+];
 
 // Returns { signalValues: Map<gateId, boolean[]>, nextComponentState: Map }
 // componentState stores per-FF state: { q: boolean, prevClk: boolean }
-export function simulate(gates, wires, inputValues, componentState = new Map()) {
+// prevSignalValues: last frame's outputs, used as fallback for combinational feedback cycles
+//   so that SR latches built from NAND/NOR gates hold state correctly.
+export function simulate(gates, wires, inputValues, componentState = new Map(), prevSignalValues = new Map()) {
   const signalValues = new Map();       // Map<gateId, boolean[]>
   const nextComponentState = new Map(componentState);
 
@@ -30,7 +52,7 @@ export function simulate(gates, wires, inputValues, componentState = new Map()) 
 
   function evalGate(id, visiting = new Set()) {
     if (signalValues.has(id)) return signalValues.get(id);
-    if (visiting.has(id)) return [false]; // cycle → LOW
+    if (visiting.has(id)) return prevSignalValues.get(id) ?? [false]; // cycle → use previous frame (holds latch state)
     visiting.add(id);
 
     const gate = gateMap.get(id);
@@ -74,6 +96,35 @@ export function simulate(gates, wires, inputValues, componentState = new Map()) 
         const [a0, a1] = getInputs(id, 2, visiting);
         const sel = (a1 ? 2 : 0) + (a0 ? 1 : 0);
         out = [0, 1, 2, 3].map(i => i === sel);
+        break;
+      }
+
+      case 'DEC7SEG': {
+        const [b3,b2,b1,b0] = getInputs(id, 4, visiting);
+        const digit = (b3?8:0)+(b2?4:0)+(b1?2:0)+(b0?1:0);
+        out = SEG_MAP[digit & 0xf].map(Boolean);  // [a,b,c,d,e,f,g]
+        break;
+      }
+
+      case 'MATRIX3X5': {
+        const [b3,b2,b1,b0,c0,c1,c2] = getInputs(id, 7, visiting);
+        const digit = (b3?8:0)+(b2?4:0)+(b1?2:0)+(b0?1:0);
+        const col = c0 ? 0 : c1 ? 1 : c2 ? 2 : -1;
+        const glyph = MATRIX_3X5_FONT[digit & 0xf];
+        out = glyph.map(row => col >= 0 && row[col] === '1'); // [R0-R4]
+        break;
+      }
+
+      case 'SEG7': {
+        out = getInputs(id, 7, visiting);  // [a,b,c,d,e,f,g] pass-through for rendering
+        break;
+      }
+
+      case 'LEDMATRIX': {
+        const inputs = getInputs(id, 8, visiting); // [C0,C1,C2, R0-R4]
+        const cols = inputs.slice(0, 3);
+        const rows = inputs.slice(3);
+        out = Array.from({length: 15}, (_, i) => rows[Math.floor(i / 3)] && cols[i % 3]);
         break;
       }
 

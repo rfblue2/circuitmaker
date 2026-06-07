@@ -13,23 +13,28 @@ export const GATE_TYPES = {
   XOR:      { label: 'XOR',       inputs: 2, fn: ([a,b]) => a !== b },
   XNOR:     { label: 'XNOR',     inputs: 2, fn: ([a,b]) => a === b },
   MUX:      { label: 'MUX',       inputs: 3, fn: ([a,b,s]) => s ? b : a },
-  SEVENSEG: { label: '7-Seg',     inputs: 4, fn: ([b3,b2,b1,b0]) => (b3?8:0)+(b2?4:0)+(b1?2:0)+(b0?1:0) },
+  SEVENSEG: { label: '7-Seg BCD', inputs: 4, fn: ([b3,b2,b1,b0]) => (b3?8:0)+(b2?4:0)+(b1?2:0)+(b0?1:0) },
+  DEC7SEG:  { label: 'BCD→7Seg', inputs: 4, fn: null },  // → [a,b,c,d,e,f,g]
+  SEG7:     { label: '7-Seg Raw', inputs: 7, fn: null },  // display only
   // Multi-output
   HALFADDER:{ label: 'Half Add',  inputs: 2, fn: null },  // → [Sum, Carry]
   FULLADDER:{ label: 'Full Add',  inputs: 3, fn: null },  // → [Sum, Cout]
   DEC24:    { label: 'Dec 2:4',   inputs: 2, fn: null },  // → [Y0,Y1,Y2,Y3]
+  MATRIX3X5:{ label: '3×5 Font',  inputs: 7, fn: null },  // B3-B0 + C0-C2 → [R0-R4]
   // Flip-flops (stateful, edge-triggered)
   DFF:      { label: 'D FF',      inputs: 2, fn: null },  // D,Clk → [Q,Q̄]
   SRFF:     { label: 'SR FF',     inputs: 3, fn: null },  // S,R,Clk → [Q,Q̄]
   JKFF:     { label: 'JK FF',     inputs: 3, fn: null },  // J,K,Clk → [Q,Q̄]
   // Input panel
   HEXPAD:   { label: 'Hex Pad',   inputs: 0, fn: null },  // click digit → [B3,B2,B1,B0]
+  // Display
+  LEDMATRIX:{ label: 'LED Matrix',inputs: 8,  fn: null }, // 3×5 pixel grid: pins 0-2=cols C0-C2 (top), 3-7=rows R0-R4 (left)
 };
 
 export const PLACEABLE_GATES = [
   'INPUT','SWITCH','BUTTON','CLOCK','OUTPUT','GROUND',
   'NOT','AND','OR','NAND','NOR','XOR','XNOR',
-  'MUX','HALFADDER','FULLADDER','DEC24',
+  'MUX','HALFADDER','FULLADDER','DEC24','DEC7SEG','MATRIX3X5',
   'DFF','SRFF','JKFF',
-  'SEVENSEG','HEXPAD',
+  'SEVENSEG','SEG7','HEXPAD','LEDMATRIX',
 ];
