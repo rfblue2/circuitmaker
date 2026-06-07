@@ -8,7 +8,7 @@ import { SAMPLES } from '../samples/index.js';
 const GROUPS = [
   { label: 'I/O',          types: ['INPUT','GROUND','SWITCH','BUTTON','CLOCK','OUTPUT','SEVENSEG','SEG7','HEXPAD','LEDMATRIX'] },
   { label: 'Logic Gates',  types: ['NOT','AND','OR','NAND','NOR','XOR','XNOR'] },
-  { label: 'Combinational',types: ['MUX','HALFADDER','FULLADDER','DEC24','DEC7SEG'] },
+  { label: 'Combinational',types: ['MUX','HALFADDER','FULLADDER','DEC24','DEC7SEG','MATRIX3X5'] },
   { label: 'Flip-Flops',   types: ['DFF','SRFF','JKFF'] },
 ];
 
